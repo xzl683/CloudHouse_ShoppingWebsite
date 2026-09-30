@@ -1,0 +1,24 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+
+# 本地环境变量（提交 .env.example）
+.env
+
+# SQLite 数据库文件
+data/*.db
+data/*.db-shm
+data/*.db-wal
+*.sqlite
+
+# 日志
+*.log
+npm-debug.log*
+
+# 系统文件
+.DS_Store
+.idea/
+.vscode/
+*.swp
