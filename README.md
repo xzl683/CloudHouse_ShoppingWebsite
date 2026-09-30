@@ -1,13 +1,13 @@
 # CloudHouse 云屋商城
 
-一个完整的购物网站项目，当前阶段实现**前端部分**，采用前后端分离架构。
+一个完整的购物网站项目，采用**前后端分离**架构：前端 Vue 3 + TypeScript，后端 Node.js + Express + TypeScript，数据库 SQLite。
 
 ## 项目结构
 
 ```
 .
-├── frontend/          # Vue 3 + TypeScript 前端（已完成）
-├── backend/           # 后端（待实现，方案待定）
+├── frontend/          # Vue 3 + TypeScript + Vite 前端
+├── backend/           # Node.js + Express + TypeScript 后端（SQLite）
 ├── 项目文档/           # 项目考核文档与学习路线
 └── README.md
 ```
@@ -32,6 +32,26 @@ npm run dev
 
 ## 后端
 
-后端暂未实现，前端使用 Mock 数据运行。后端方案对比与推荐详见 [开发计划](./.trae/documents/shopping_website_plan.md)。
+详见 [backend/README.md](./backend/README.md)
 
-推荐方案：**Node.js + Express + TypeScript**，与前端统一 TS 生态。
+### 快速开始
+
+```bash
+cd backend
+npm install
+npm run dev      # 开发模式（tsx watch，自动重启）
+# 或
+npm run build && npm start   # 生产模式
+```
+
+服务运行于 http://localhost:3001 ，健康检查 http://localhost:3001/api/health
+
+### 前后端联调
+
+1. 启动后端：`cd backend && npm run dev`
+2. 将 `frontend/.env` 中 `VITE_USE_MOCK` 改为 `false`（已通过 Vite 代理 /api → :3001）
+3. 启动前端：`cd frontend && npm run dev`
+
+## 技术选型说明
+
+后端采用推荐方案 **Node.js + Express + TypeScript**，与前端统一 TS 生态，便于共享类型定义、AI 辅助生成代码。方案对比与选型详见 [开发计划](./.trae/documents/shopping_website_plan.md)。

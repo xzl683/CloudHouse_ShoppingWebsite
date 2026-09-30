@@ -32,5 +32,13 @@ export default defineConfig({
   server: {
     port: 5173,
     open: false,
+    // 将 /api 请求代理到后端（Express，默认 3001 端口）
+    // 切换到真实后端时：将 .env 中 VITE_USE_MOCK 改为 false 即可
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
 })
