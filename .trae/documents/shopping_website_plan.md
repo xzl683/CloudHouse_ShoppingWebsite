@@ -1,99 +1,56 @@
-# 购物网站（Vue 3 + TypeScript）开发计划
+# 购物网站（Vue 3 + TypeScript）前端开发计划
+
+> 本阶段**仅实现前端**，采用前后端分离架构。后端与 AI Agent 暂不实现，前端通过 Mock 数据 + 接口契约先行开发，后续可对接任意后端方案。
 
 ## 一、需求分析与技术选型
 
 ### 1.1 项目目标
-开发一个完整的购物网站，包含：前端页面、后端服务、商品数据、基础购物流程。鼓励加入 AI 客服/购物 Agent 功能。
+开发购物网站的**前端部分**，包含完整的购物流程页面。前端通过统一的 API 层与后端解耦，开发阶段使用 Mock 数据，后续可平滑接入真实后端。
 
 ### 1.2 核心用户流程
 进入商城 → 浏览商品 → 搜索/筛选 → 商品详情 → 加入购物车 → 修改购物车 → 提交订单 → 查看订单结果
 
-### 1.3 技术栈
+### 1.3 前端技术栈
 | 层级 | 技术选型 | 说明 |
 |------|----------|------|
 | 前端框架 | Vue 3 + TypeScript + Vite | Composition API + `<script setup>` |
 | UI 组件库 | Element Plus | 成熟组件丰富，中文文档完善 |
 | 状态管理 | Pinia | 购物车、用户、商品状态 |
 | 路由 | Vue Router 4 | 页面路由 |
-| HTTP | Axios | 接口请求封装 |
+| HTTP | Axios | 接口请求封装（统一拦截器、错误处理） |
 | 样式 | SCSS + 响应式（flex + 媒体查询） | 50%–250% 缩放适配 |
-| 后端 | Node.js + Express + TypeScript | RESTful API |
-| 数据库 | SQLite (better-sqlite3) | 轻量、零配置、易部署 |
-| AI Agent | Qwen / DeepSeek API + 工具调用 | 特别加分项 |
+| Mock 数据 | 本地 JSON + 前端模拟 | 开发阶段替代后端 |
 
-### 1.4 项目目录结构
+### 1.4 前端项目目录结构
 ```
-/workspace
-├── frontend/                # Vue 3 + TS 前端
-│   ├── src/
-│   │   ├── api/             # 接口请求封装
-│   │   ├── assets/          # 静态资源（图片、样式）
-│   │   ├── components/      # 公共组件
-│   │   ├── layouts/         # 布局组件
-│   │   ├── router/          # 路由配置
-│   │   ├── stores/          # Pinia 状态
-│   │   ├── types/           # TS 类型定义
-│   │   ├── utils/           # 工具函数
-│   │   ├── views/           # 页面组件
-│   │   ├── App.vue
-│   │   └── main.ts
-│   ├── index.html
-│   ├── vite.config.ts
-│   └── tsconfig.json
-├── backend/                 # Express + TS 后端
-│   ├── src/
-│   │   ├── controllers/     # 控制器
-│   │   ├── db/              # 数据库连接与初始化
-│   │   ├── middleware/      # 中间件（鉴权等）
-│   │   ├── models/          # 数据模型
-│   │   ├── routes/          # 路由
-│   │   ├── services/        # 业务逻辑
-│   │   ├── types/           # TS 类型
-│   │   └── app.ts
-│   ├── data/                # 种子数据（商品 JSON）
-│   └── ...
-├── README.md
-└── .trae/documents/         # 计划文档
+/workspace/frontend/
+├── src/
+│   ├── api/             # 接口请求封装（按模块拆分）
+│   ├── assets/          # 静态资源（图片、全局样式）
+│   ├── components/      # 公共组件（ProductCard、CartDrawer 等）
+│   ├── layouts/         # 布局组件（DefaultLayout）
+│   ├── mock/            # Mock 数据（商品、订单等）
+│   ├── router/          # 路由配置
+│   ├── stores/          # Pinia 状态（cart、user、product）
+│   ├── types/           # TS 类型定义（Product、Order、CartItem 等）
+│   ├── utils/           # 工具函数（请求、格式化、存储等）
+│   ├── views/           # 页面组件（Home、ProductList、ProductDetail 等）
+│   ├── App.vue
+│   └── main.ts
+├── index.html
+├── vite.config.ts
+├── tsconfig.json
+└── package.json
 ```
 
 ---
 
-## 二、数据库设计
+## 二、前后端分离说明与后端方案介绍
 
-### 2.1 products 表（商品）
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 自增主键 |
-| name | TEXT | 商品名称 |
-| price | REAL | 价格 |
-| description | TEXT | 商品介绍 |
-| category | TEXT | 分类（如 耳机、键盘、鼠标） |
-| image_url | TEXT | 商品图片 URL |
-| stock | INTEGER | 库存 |
-| tags | TEXT | 标签（JSON 数组字符串） |
-| created_at | TEXT | 创建时间 |
+### 2.1 前后端分离架构
+前端独立工程，通过 HTTP API 与后端通信。开发阶段前端内置 Mock 数据层，所有接口调用走统一的 `api/` 模块；后续接入真实后端时，只需将 `api/` 模块中的 Mock 实现替换为真实 Axios 请求，业务代码无需改动。
 
-### 2.2 orders 表（订单）
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 自增主键 |
-| order_no | TEXT UNIQUE | 订单编号 |
-| items | TEXT | 商品列表（JSON） |
-| total_amount | REAL | 订单总价 |
-| status | TEXT | 订单状态（pending/paid） |
-| created_at | TEXT | 创建时间 |
-
-### 2.3 users 表（用户，加分项）
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 自增主键 |
-| username | TEXT UNIQUE | 用户名 |
-| password_hash | TEXT | 密码哈希 |
-| created_at | TEXT | 创建时间 |
-
----
-
-## 三、后端 API 设计
+**接口契约**（前端按此契约开发，后端需提供对应 API）：
 
 | 方法 | 路径 | 说明 | 必需 |
 |------|------|------|------|
@@ -105,11 +62,56 @@
 | POST | /api/auth/register | 用户注册 | 加分 |
 | POST | /api/auth/login | 用户登录 | 加分 |
 | GET | /api/auth/me | 当前用户信息 | 加分 |
-| POST | /api/agent/chat | AI Agent 对话 | 特别加分 |
+
+### 2.2 后端方案对比（供后续选择）
+
+#### 方案一：Node.js + Express + TypeScript
+- **适用场景**：全栈 TypeScript，与前端语言统一，学习成本最低
+- **优点**：轻量灵活、社区生态成熟、与前端共享类型定义、AI 辅助生成代码顺畅
+- **缺点**：需要自行搭建分层架构、中间件、ORM
+- **数据库**：SQLite / PostgreSQL / MySQL
+- **适合**：快速交付、个人项目、中小型应用
+
+#### 方案二：Node.js + NestJS + TypeScript
+- **适用场景**：企业级、模块化、需要良好工程规范
+- **优点**：模块化架构（类似 Angular）、内置依赖注入、拦截器、守卫、管道；自动生成 Swagger 文档
+- **缺点**：概念较多、学习曲线较陡
+- **数据库**：TypeORM / Prisma / Sequelize
+- **适合**：团队协作、长期维护、中大型应用
+
+#### 方案三：Python + FastAPI
+- **适用场景**：AI 能力集成（后续加 Agent 时天然友好）、快速原型
+- **优点**：性能优秀、自动生成 OpenAPI 文档、异步原生支持、Python 生态与 AI 无缝衔接
+- **缺点**：与前端语言不统一、需额外环境
+- **数据库**：SQLAlchemy / SQLModel
+- **适合**：后续要集成 AI Agent 的项目
+
+#### 方案四：Java + Spring Boot
+- **适用场景**：企业级标准、高并发、强类型安全
+- **优点**：生态最成熟、Spring 全家桶（Security、Data、Cloud）、ORM（MyBatis/JPA）
+- **缺点**：启动慢、代码量大、配置复杂
+- **数据库**：MySQL / PostgreSQL
+- **适合**：大型企业项目、团队已有 Java 技术栈
+
+#### 方案五：Go + Gin
+- **适用场景**：高性能、高并发、微服务
+- **优点**：性能极强、编译为单文件、部署简单、协程并发
+- **缺点**：生态相对较小、与前端语言差异大
+- **数据库**：GORM
+- **适合**：性能敏感、高并发场景
+
+### 2.3 推荐方案
+鉴于本项目前端使用 Vue + TypeScript，且考核强调 AI Coding 与快速交付，**推荐方案一（Node.js + Express + TypeScript）**：
+- 前后端统一 TS，可共享类型定义
+- 轻量快速，适合考核项目节奏
+- AI 工具对 TS/Express 代码生成质量高
+- 后续若要加 AI Agent，可在同工程内集成 LLM SDK
+
+> 后端实现留待后续阶段，当前前端按接口契约开发，Mock 数据先行。
 
 ---
 
-## 四、前端页面清单
+## 三、前端页面清单
 
 | 页面 | 路由 | 核心功能 | 必需 |
 |------|------|----------|------|
@@ -120,92 +122,84 @@
 | 订单列表 | `/orders` | 查看历史订单 | ✅ |
 | 登录 | `/login` | 用户登录 | 加分 |
 | 注册 | `/register` | 用户注册 | 加分 |
-| AI Agent | 全局聊天窗口 | 自然语言购物助手 | 特别加分 |
 
 侧拉式购物车作为全局组件（非独立页面），由导航栏购物车图标触发。
 
 ---
 
-## 五、实现步骤（按依赖顺序）
+## 四、实现步骤（前端，按依赖顺序）
 
 ### 阶段一：项目脚手架与基础配置
 1. **初始化前端项目**：使用 Vite 创建 Vue 3 + TS 项目，安装 Element Plus、Pinia、Vue Router、Axios、SCSS
-2. **初始化后端项目**：创建 Express + TS 项目结构，安装 express、better-sqlite3、cors、dotenv
-3. **配置基础**：前端配置 Vite 路径别名、Element Plus 自动导入、全局样式；后端配置 TS、启动脚本、CORS
+2. **配置基础**：Vite 路径别名 `@`、Element Plus 自动导入、全局样式变量、reset 样式
 
-### 阶段二：后端核心
-4. **数据库设计与初始化**：编写 SQLite 建表脚本，准备 20 条商品种子数据（覆盖耳机、键盘、鼠标、显示器等分类，价格有差异）
-5. **商品 API**：实现 GET /api/products（搜索 keyword、分类 category、价格区间 minPrice/maxPrice、分页 page/pageSize、排序 sort）和 GET /api/products/:id
-6. **订单 API**：实现 POST /api/orders（含订单号生成、库存校验、金额计算）、GET /api/orders/:id、GET /api/orders
-7. **用户 API（加分）**：注册、登录（JWT）、获取当前用户
+### 阶段二：基础架构与类型
+3. **类型定义**：`types/` 下定义 Product、CartItem、Order、OrderItem、User、ApiResponse 等接口
+4. **Mock 数据层**：`mock/` 下准备 20 条商品数据、模拟订单数据
+5. **API 封装层**：`api/` 下封装 products、orders、auth 模块；统一请求方法（当前返回 Mock，预留切换真实接口的开关）
+6. **Axios 实例**：配置 baseURL、请求/响应拦截器、统一错误处理
 
-### 阶段三：前端基础架构
-8. **全局配置**：路由表、Pinia stores（cart、user、product）、Axios 实例封装、布局组件（DefaultLayout 含导航栏 + 侧拉购物车）
-9. **导航栏组件**：Logo、导航链接、搜索框、购物车图标（悬浮效果 + 商品数量徽标）
+### 阶段三：状态管理与路由
+7. **Pinia stores**：cartStore（购物车增删改、金额计算、持久化到 localStorage）、userStore（登录状态）、productStore（商品列表、搜索筛选状态）
+8. **路由配置**：配置首页、商品列表、商品详情、订单结果、订单列表、登录、注册路由
 
-### 阶段四：前端业务页面
-10. **首页**：Banner、分类入口、推荐商品区、热门商品列表
-11. **商品列表页**：商品卡片网格、搜索栏、筛选面板（分类 + 价格区间）、分页
-12. **商品详情页**：商品大图轮播、名称、价格、库存、介绍、加入购物车按钮
-13. **侧拉购物车**：从右侧滑出，商品列表、数量增减、单项/总金额、清空、去结算
-14. **订单流程**：结算（模拟支付）→ 订单结果页（订单号、商品、总价、状态）→ 订单列表页
+### 阶段四：布局与公共组件
+9. **DefaultLayout**：顶部导航栏 + 主内容区 + 侧拉购物车抽屉
+10. **NavBar 组件**：Logo、导航链接、搜索框、购物车图标（悬浮效果 + 商品数量徽标）
+11. **ProductCard 组件**：商品图片、名称、价格、标签、加入购物车按钮
+12. **CartDrawer 组件**：右侧滑出，商品列表、数量增减、单项/总金额、清空、去结算
 
-### 阶段五：响应式与体验优化
-15. **响应式适配**：flex 布局 + 媒体查询 + 相对单位（rem/vw），适配手机/平板/电脑，50%–250% 缩放测试
+### 阶段五：业务页面
+13. **首页**：Banner、分类入口、推荐商品区、热门商品列表
+14. **商品列表页**：商品卡片网格、搜索栏、筛选面板（分类 + 价格区间）、分页
+15. **商品详情页**：商品大图、名称、价格、库存、介绍、加入购物车按钮
+16. **订单流程**：结算（模拟支付）→ 订单结果页（订单号、商品、总价、状态）→ 订单列表页
 
-### 阶段六：加分项
-16. **用户系统（加分）**：登录/注册页面、Pinia user store、登录状态管理、路由守卫
-17. **AI 购物 Agent（特别加分）**：
-    - 聊天窗口 UI（流式输出、打字机效果）
-    - `searchProducts` 工具调用
-    - 多轮上下文理解
-    - 写入工具：`addToCart`、`updateCartItem`、`removeFromCart`、`getCart`、`createOrder`（写入前需用户确认）
-    - 多步规划与复杂约束处理
+### 阶段六：响应式与体验优化
+17. **响应式适配**：flex 布局 + 媒体查询 + 相对单位（rem/vw），适配手机/平板/电脑，50%–250% 缩放测试
 
-### 阶段七：文档与交付
-18. **README**：项目介绍、技术栈、运行说明
-19. **AI Coding Process**：记录 2–3 个代表性 AI 辅助开发任务
+### 阶段七：加分项（用户系统）
+18. **用户系统**：登录/注册页面、Pinia user store、登录状态管理、路由守卫
+
+### 阶段八：文档
+19. **README**：项目介绍、技术栈、运行说明、后端对接说明
 20. **联调验证**：核心流程全链路测试、响应式测试
 
 ---
 
-## 六、依赖与注意事项
+## 五、依赖与注意事项
 
-- 前端运行在 `http://localhost:5173`，后端运行在 `http://localhost:3000`，通过 Vite proxy 或后端 CORS 解决跨域
+- 前端运行在 `http://localhost:5173`
+- 开发阶段使用 Mock 数据，`api/` 层通过 `import.meta.env.VITE_USE_MOCK` 控制是否启用 Mock
 - 商品图片使用网络公开图片 URL（如 Unsplash），避免本地资源管理复杂度
-- 订单号生成规则：`ORD` + 时间戳 + 随机数
-- 密码使用 bcrypt 哈希存储（加分项用户系统）
-- AI Agent 部分需配置 LLM API Key（通过环境变量 `.env` 注入，不提交到仓库）
+- 购物车状态使用 Pinia + localStorage 持久化
+- 订单号生成规则：`ORD` + 时间戳 + 随机数（前端 Mock 阶段生成，后端对接后由后端生成）
 
 ---
 
-## 七、验证方式
+## 六、验证方式
 
-1. **后端验证**：使用 curl/Postman 测试所有 API 接口返回正确数据
-2. **前端验证**：
+1. **前端流程验证**：
    - 核心流程：浏览 → 搜索 → 筛选 → 详情 → 加购 → 修改购物车 → 下单 → 查看订单，全流程跑通
    - 购物车：增删改、金额计算、清空均正常
    - 响应式：浏览器开发者工具切换设备（手机/平板/桌面）+ 缩放 50%/100%/250%，布局不错乱
-3. **AI Agent 验证**：测试自然语言查商品、多轮追问、加购/下单闭环
+2. **接口契约验证**：Mock 数据结构与后端 API 契约一致，后续对接仅需切换数据源
 
 ---
 
-## 八、风险与处理
+## 七、风险与处理
 
 | 风险 | 处理方式 |
 |------|----------|
-| AI Agent API Key 不可用 | Agent 作为加分项，不影响主流程；可先实现 mock 版本 |
-| better-sqlite3 原生编译问题 | 准备 JSON 文件存储的 fallback 方案 |
 | 商品图片 URL 失效 | 选择稳定的图床或使用 placeholder 图片服务 |
 | 响应式在极端缩放下错乱 | 使用 rem + clamp() + 媒体查询组合，优先保证可用性 |
-| 前后端联调跨域 | 后端配置 CORS，前端开发环境用 Vite proxy |
+| Mock 与真实后端字段不一致 | 严格按接口契约定义 TS 类型，Mock 数据与类型对齐 |
+| 后续后端对接改动大 | API 层完全解耦，切换数据源仅改 `api/` 模块，业务代码不动 |
 
 ---
 
-## 九、加分项优先级建议
+## 八、优先级
 
-1. **必做**：阶段一 ~ 阶段五（核心购物流程）
-2. **推荐加分**：阶段六-16（用户系统）+ 阶段六-17 基础层（9.1–9.3：对话 + 搜索工具 + 多轮）
-3. **进阶加分**：Agent 进阶层（9.4–9.5：购物闭环 + 多步规划）
-4. **高阶加分**：Agent 高阶层（9.6–9.7：鲁棒性 + 流式输出 + 富消息）
-5. **挑战加分**：Agent 挑战层（9.8：测试用例 + 评估）
+1. **必做**：阶段一 ~ 阶段六（核心购物流程 + 响应式）
+2. **推荐加分**：阶段七（用户系统）
+3. **后续阶段**：后端实现（方案一 Express + TS）、AI Agent
