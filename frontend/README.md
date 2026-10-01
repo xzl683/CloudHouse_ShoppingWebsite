@@ -24,14 +24,14 @@
 
 ## 技术栈
 
-| 层级 | 技术 | 说明 |
-|------|------|------|
-| 前端框架 | Vue 3 + TypeScript + Vite | Composition API + `<script setup>` |
-| UI 组件库 | Element Plus | 组件化开发 |
-| 状态管理 | Pinia | 购物车、用户状态 |
-| 路由 | Vue Router 4 | 页面路由 |
-| HTTP | Axios | 接口请求封装 |
-| 样式 | SCSS | 响应式布局（flex + 媒体查询） |
+| 层级      | 技术                      | 说明                               |
+| --------- | ------------------------- | ---------------------------------- |
+| 前端框架  | Vue 3 + TypeScript + Vite | Composition API + `<script setup>` |
+| UI 组件库 | Element Plus              | 组件化开发                         |
+| 状态管理  | Pinia                     | 购物车、用户状态                   |
+| 路由      | Vue Router 4              | 页面路由                           |
+| HTTP      | Axios                     | 接口请求封装                       |
+| 样式      | SCSS                      | 响应式布局（flex + 媒体查询）      |
 
 ## 项目结构
 
@@ -112,16 +112,16 @@ VITE_API_BASE_URL=/api      # 后端 API 地址
 
 将 `VITE_USE_MOCK` 设为 `false`，前端将通过 Axios 请求真实后端接口。只需确保后端提供以下 API 契约：
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/products | 商品列表（支持 keyword, category, minPrice, maxPrice, page, pageSize, sort） |
-| GET | /api/products/:id | 商品详情 |
-| POST | /api/orders | 创建订单 |
-| GET | /api/orders/:id | 订单详情 |
-| GET | /api/orders | 订单列表 |
-| POST | /api/auth/register | 用户注册 |
-| POST | /api/auth/login | 用户登录 |
-| GET | /api/auth/me | 当前用户信息 |
+| 方法 | 路径               | 说明                                                                         |
+| ---- | ------------------ | ---------------------------------------------------------------------------- |
+| GET  | /api/products      | 商品列表（支持 keyword, category, minPrice, maxPrice, page, pageSize, sort） |
+| GET  | /api/products/:id  | 商品详情                                                                     |
+| POST | /api/orders        | 创建订单                                                                     |
+| GET  | /api/orders/:id    | 订单详情                                                                     |
+| GET  | /api/orders        | 订单列表                                                                     |
+| POST | /api/auth/register | 用户注册                                                                     |
+| POST | /api/auth/login    | 用户登录                                                                     |
+| GET  | /api/auth/me       | 当前用户信息                                                                 |
 
 ### 后端方案推荐
 

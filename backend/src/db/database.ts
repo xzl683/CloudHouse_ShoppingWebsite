@@ -1,41 +1,41 @@
-import Database from 'better-sqlite3'
-import path from 'node:path'
-import fs from 'node:fs'
-import { config } from '../config'
-import { seed } from './seed'
+import Database from 'better-sqlite3';
+import path from 'node:path';
+import fs from 'node:fs';
+import { config } from '../config';
+import { seed } from './seed';
 
-let dbInstance: Database.Database | null = null
+let dbInstance: Database.Database | null = null;
 
 /**
  * 获取数据库单例（首次调用时建表并播种数据）
  */
 export function getDb(): Database.Database {
-  if (dbInstance) return dbInstance
+	if (dbInstance) return dbInstance;
 
-  const dbPath = path.resolve(process.cwd(), config.dbPath)
-  const dir = path.dirname(dbPath)
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true })
-  }
+	const dbPath = path.resolve(process.cwd(), config.dbPath);
+	const dir = path.dirname(dbPath);
+	if (!fs.existsSync(dir)) {
+		fs.mkdirSync(dir, { recursive: true });
+	}
 
-  const db = new Database(dbPath)
-  db.pragma('journal_mode = WAL')
+	const db = new Database(dbPath);
+	db.pragma('journal_mode = WAL');
 
-  initSchema(db)
+	initSchema(db);
 
-  // 仅在商品表为空时执行种子（避免每次重启重复插入）
-  const { c } = db.prepare('SELECT COUNT(*) AS c FROM products').get() as { c: number }
-  if (c === 0) {
-    seed(db)
-    console.log('[db] 已写入种子数据')
-  }
+	// 仅在商品表为空时执行种子（避免每次重启重复插入）
+	const { c } = db.prepare('SELECT COUNT(*) AS c FROM products').get() as { c: number };
+	if (c === 0) {
+		seed(db);
+		console.log('[db] 已写入种子数据');
+	}
 
-  dbInstance = db
-  return db
+	dbInstance = db;
+	return db;
 }
 
 function initSchema(db: Database.Database): void {
-  db.exec(`
+	db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
@@ -77,5 +77,5 @@ function initSchema(db: Database.Database): void {
       FOREIGN KEY (order_id) REFERENCES orders(id)
     );
     CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
-  `)
+  `);
 }
