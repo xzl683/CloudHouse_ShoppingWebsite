@@ -1,0 +1,17 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+
+# 自动生成的类型声明文件（由 unplugin 维护，勿格式化）
+src/auto-imports.d.ts
+src/components.d.ts
+
+# 锁文件
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 第三方库
+public/

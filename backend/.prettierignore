@@ -1,0 +1,13 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+
+# SQLite 数据库文件
+data/
+
+# 锁文件
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

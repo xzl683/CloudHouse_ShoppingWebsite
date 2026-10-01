@@ -6,15 +6,15 @@
 
 ## 技术栈
 
-| 层级 | 技术 | 说明 |
-|------|------|------|
-| 运行时 | Node.js + TypeScript | 与前端统一 TS 生态 |
-| Web 框架 | Express 4 | 轻量成熟 |
-| 数据库 | SQLite (better-sqlite3) | 单文件、零配置、同步 API |
-| 鉴权 | jsonwebtoken + bcryptjs | JWT 令牌 + 密码哈希 |
-| 日志 | morgan | HTTP 请求日志 |
-| 开发工具 | tsx | TS 热重载开发 |
-| 构建 | tsc | 类型检查 + 编译为 CJS |
+| 层级     | 技术                    | 说明                     |
+| -------- | ----------------------- | ------------------------ |
+| 运行时   | Node.js + TypeScript    | 与前端统一 TS 生态       |
+| Web 框架 | Express 4               | 轻量成熟                 |
+| 数据库   | SQLite (better-sqlite3) | 单文件、零配置、同步 API |
+| 鉴权     | jsonwebtoken + bcryptjs | JWT 令牌 + 密码哈希      |
+| 日志     | morgan                  | HTTP 请求日志            |
+| 开发工具 | tsx                     | TS 热重载开发            |
+| 构建     | tsc                     | 类型检查 + 编译为 CJS    |
 
 ## 项目结构
 
@@ -58,6 +58,7 @@ npm start         # node dist/server.js
 ```
 
 启动后：
+
 - 服务地址：http://localhost:3001
 - 健康检查：http://localhost:3001/api/health
 
@@ -65,13 +66,13 @@ npm start         # node dist/server.js
 
 复制 `.env.example` 为 `.env` 并按需修改：
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `PORT` | `3001` | 服务端口 |
-| `JWT_SECRET` | `cloudhouse-dev-secret-change-me` | JWT 签名密钥（生产务必替换） |
-| `JWT_EXPIRES_IN` | `7d` | Token 有效期 |
-| `CORS_ORIGIN` | `http://localhost:5173` | 允许的跨域来源（逗号分隔） |
-| `DB_PATH` | `./data/cloudhouse.db` | SQLite 文件路径 |
+| 变量             | 默认值                            | 说明                         |
+| ---------------- | --------------------------------- | ---------------------------- |
+| `PORT`           | `3001`                            | 服务端口                     |
+| `JWT_SECRET`     | `cloudhouse-dev-secret-change-me` | JWT 签名密钥（生产务必替换） |
+| `JWT_EXPIRES_IN` | `7d`                              | Token 有效期                 |
+| `CORS_ORIGIN`    | `http://localhost:5173`           | 允许的跨域来源（逗号分隔）   |
+| `DB_PATH`        | `./data/cloudhouse.db`            | SQLite 文件路径              |
 
 > 数据库在首次启动时自动建表并写入种子数据（20 件商品 + demo 用户 + 1 笔演示订单）。重置数据只需删除 `data/cloudhouse.db*` 后重启。
 
@@ -87,40 +88,40 @@ npm start         # node dist/server.js
 
 ### 商品 `/api/products`
 
-| 方法 | 路径 | 说明 | 入参 |
-|------|------|------|------|
-| GET | `/api/products` | 商品列表（搜索/筛选/分页/排序） | query: `keyword` `category` `minPrice` `maxPrice` `page` `pageSize` `sort(price_asc\|price_desc\|newest)` |
-| GET | `/api/products/:id` | 商品详情 | - |
-| GET | `/api/products/categories` | 分类列表 | - |
+| 方法 | 路径                       | 说明                            | 入参                                                                                                      |
+| ---- | -------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| GET  | `/api/products`            | 商品列表（搜索/筛选/分页/排序） | query: `keyword` `category` `minPrice` `maxPrice` `page` `pageSize` `sort(price_asc\|price_desc\|newest)` |
+| GET  | `/api/products/:id`        | 商品详情                        | -                                                                                                         |
+| GET  | `/api/products/categories` | 分类列表                        | -                                                                                                         |
 
 ### 订单 `/api/orders`
 
-| 方法 | 路径 | 说明 | 鉴权 |
-|------|------|------|------|
-| GET | `/api/orders` | 订单列表（登录看本人+匿名，未登录看匿名） | 可选 |
-| POST | `/api/orders` | 创建订单（校验库存 + 事务扣减） | 可选 |
-| GET | `/api/orders/:id` | 按 id 查询 | - |
-| GET | `/api/orders/no/:orderNo` | 按订单号查询 | - |
+| 方法 | 路径                      | 说明                                      | 鉴权 |
+| ---- | ------------------------- | ----------------------------------------- | ---- |
+| GET  | `/api/orders`             | 订单列表（登录看本人+匿名，未登录看匿名） | 可选 |
+| POST | `/api/orders`             | 创建订单（校验库存 + 事务扣减）           | 可选 |
+| GET  | `/api/orders/:id`         | 按 id 查询                                | -    |
+| GET  | `/api/orders/no/:orderNo` | 按订单号查询                              | -    |
 
 创建订单请求体：
 
 ```json
-{ "items": [ { "product_id": 2, "quantity": 2 } ] }
+{ "items": [{ "product_id": 2, "quantity": 2 }] }
 ```
 
 ### 用户认证 `/api/auth`
 
-| 方法 | 路径 | 说明 | 鉴权 |
-|------|------|------|------|
-| POST | `/api/auth/register` | 注册（用户名 2-20 位，密码 ≥6 位） | - |
-| POST | `/api/auth/login` | 登录，返回 JWT | - |
-| GET | `/api/auth/me` | 当前用户信息 | 必须登录 |
+| 方法 | 路径                 | 说明                               | 鉴权     |
+| ---- | -------------------- | ---------------------------------- | -------- |
+| POST | `/api/auth/register` | 注册（用户名 2-20 位，密码 ≥6 位） | -        |
+| POST | `/api/auth/login`    | 登录，返回 JWT                     | -        |
+| GET  | `/api/auth/me`       | 当前用户信息                       | 必须登录 |
 
 ### 其他
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/health` | 健康检查 |
+| 方法 | 路径          | 说明     |
+| ---- | ------------- | -------- |
+| GET  | `/api/health` | 健康检查 |
 
 ## 数据模型
 
