@@ -22,7 +22,7 @@
 					style="width: 120px"
 					@change="handleFilterChange"
 				/>
-				<span style="margin: 0 8px">—</span>
+				<span>~</span>
 				<el-input-number
 					v-model="maxPrice"
 					:min="0"
