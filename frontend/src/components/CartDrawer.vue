@@ -70,6 +70,7 @@ const visible = computed({
 });
 
 async function goCheckout() {
+	if (!cartStore.requireLogin()) return;
 	try {
 		await ElMessageBox.confirm(
 			`确认提交订单，合计 ¥${cartStore.totalAmount.toFixed(2)} ？`,

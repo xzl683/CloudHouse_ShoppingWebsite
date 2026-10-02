@@ -10,7 +10,12 @@ const router = Router();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rowToUser(row: any): User {
-	return { id: row.id, username: row.username, created_at: row.created_at };
+	return {
+		id: row.id,
+		username: row.username,
+		balance: row.balance ?? 0,
+		created_at: row.created_at,
+	};
 }
 
 // POST /api/auth/register —— 注册
@@ -39,10 +44,12 @@ router.post('/register', (req, res) => {
 	const passwordHash = bcrypt.hashSync(password, 10);
 	const createdAt = new Date().toISOString();
 	const r = db
-		.prepare('INSERT INTO users (username, password, created_at) VALUES (?, ?, ?)')
+		.prepare(
+			'INSERT INTO users (username, password, balance, created_at) VALUES (?, ?, 0, ?)',
+		)
 		.run(username, passwordHash, createdAt);
 	const row = db
-		.prepare('SELECT id, username, created_at FROM users WHERE id = ?')
+		.prepare('SELECT id, username, balance, created_at FROM users WHERE id = ?')
 		.get(r.lastInsertRowid);
 	res.json(success(rowToUser(row), '注册成功'));
 });
@@ -72,13 +79,42 @@ router.post('/login', (req, res) => {
 router.get('/me', authRequired, (req, res) => {
 	const db = getDb();
 	const row = db
-		.prepare('SELECT id, username, created_at FROM users WHERE id = ?')
-		.get(req.userId) as { id: number; username: string; created_at: string } | undefined;
+		.prepare('SELECT id, username, balance, created_at FROM users WHERE id = ?')
+		.get(req.userId) as
+		| { id: number; username: string; balance: number; created_at: string }
+		| undefined;
 	if (!row) {
 		res.status(404).json({ code: 404, message: '用户不存在', data: null });
 		return;
 	}
 	res.json(success(rowToUser(row)));
+});
+
+// POST /api/auth/recharge —— 充值（需登录）
+router.post('/recharge', authRequired, (req, res) => {
+	const { amount } = req.body ?? {};
+	const num = Number(amount);
+	if (!num || num <= 0 || !Number.isFinite(num)) {
+		res.status(400).json({ code: 400, message: '充值金额必须为正数', data: null });
+		return;
+	}
+	if (num > 100000) {
+		res.status(400).json({ code: 400, message: '单次充值金额不能超过 100000', data: null });
+		return;
+	}
+
+	const db = getDb();
+	db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').run(num, req.userId);
+	const row = db
+		.prepare('SELECT id, username, balance, created_at FROM users WHERE id = ?')
+		.get(req.userId) as
+		| { id: number; username: string; balance: number; created_at: string }
+		| undefined;
+	if (!row) {
+		res.status(404).json({ code: 404, message: '用户不存在', data: null });
+		return;
+	}
+	res.json(success(rowToUser(row), `充值成功，已到账 ¥${num.toFixed(2)}`));
 });
 
 export default router;

@@ -40,6 +40,7 @@ function initSchema(db: Database.Database): void {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
+      balance REAL NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL
     );
 
@@ -78,4 +79,12 @@ function initSchema(db: Database.Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
   `);
+
+	// 兼容旧数据库：为已存在的 users 表补充 balance 列
+	const cols = db
+		.prepare('PRAGMA table_info(users)')
+		.all() as { name: string }[];
+	if (!cols.some(c => c.name === 'balance')) {
+		db.exec('ALTER TABLE users ADD COLUMN balance REAL NOT NULL DEFAULT 0');
+	}
 }

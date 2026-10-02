@@ -64,6 +64,7 @@ export interface CreateOrderRequest {
 export interface User {
 	id: number;
 	username: string;
+	balance: number;
 	created_at: string;
 }
 

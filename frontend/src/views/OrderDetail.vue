@@ -47,20 +47,22 @@
 					<el-table-column label="商品" min-width="200">
 						<template #default="{ row }">
 							<div class="order-detail__product-cell">
-								<img :src="row.image_url" :alt="row.name" />
-								<span class="text-ellipsis">{{ row.name }}</span>
+								<img :src="row?.image_url" :alt="row?.name" />
+								<span class="text-ellipsis">{{ row?.name }}</span>
 							</div>
 						</template>
 					</el-table-column>
 					<el-table-column label="单价" width="120">
-						<template #default="{ row }">¥{{ row.price.toFixed(2) }}</template>
+						<template #default="{ row }">¥{{ row?.price?.toFixed(2) }}</template>
 					</el-table-column>
 					<el-table-column label="数量" width="100">
-						<template #default="{ row }">{{ row.quantity }}</template>
+						<template #default="{ row }">{{ row?.quantity }}</template>
 					</el-table-column>
 					<el-table-column label="小计" width="120">
 						<template #default="{ row }">
-							<span style="color: #f56c6c">¥{{ (row.price * row.quantity).toFixed(2) }}</span>
+							<span style="color: #f56c6c"
+								>¥{{ row ? (row.price * row.quantity).toFixed(2) : '0.00' }}</span
+							>
 						</template>
 					</el-table-column>
 				</el-table>

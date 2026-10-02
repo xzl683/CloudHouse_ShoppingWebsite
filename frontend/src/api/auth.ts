@@ -6,7 +6,9 @@ const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 
 // ============ 用户认证 API ============
 
-const MOCK_USERS = [{ id: 1, username: 'demo', password: '123456' }];
+const MOCK_USERS = [
+	{ id: 1, username: 'demo', password: '123456', balance: 1000 },
+];
 
 export function login(data: LoginRequest): Promise<LoginResponse> {
 	if (USE_MOCK) {
@@ -18,6 +20,7 @@ export function login(data: LoginRequest): Promise<LoginResponse> {
 		const userInfo: User = {
 			id: user.id,
 			username: user.username,
+			balance: user.balance,
 			created_at: '2026-01-01T00:00:00Z',
 		};
 		storage.set('token', token);
@@ -33,11 +36,12 @@ export function register(data: RegisterRequest): Promise<User> {
 		if (exists) {
 			return Promise.reject(new Error('用户名已存在'));
 		}
-		const newUser = { id: MOCK_USERS.length + 1, ...data };
+		const newUser = { id: MOCK_USERS.length + 1, ...data, balance: 0 };
 		MOCK_USERS.push(newUser);
 		const userInfo: User = {
 			id: newUser.id,
 			username: newUser.username,
+			balance: newUser.balance,
 			created_at: new Date().toISOString(),
 		};
 		return Promise.resolve(userInfo);
@@ -52,6 +56,18 @@ export function getCurrentUser(): Promise<User> {
 		return Promise.resolve(user);
 	}
 	return http<User>({ url: '/auth/me', method: 'GET' });
+}
+
+// 充值
+export function recharge(amount: number): Promise<User> {
+	if (USE_MOCK) {
+		const user = storage.get<User>('user');
+		if (!user) return Promise.reject(new Error('未登录'));
+		user.balance += amount;
+		storage.set('user', user);
+		return Promise.resolve(user);
+	}
+	return http<User>({ url: '/auth/recharge', method: 'POST', data: { amount } });
 }
 
 export function logout(): void {

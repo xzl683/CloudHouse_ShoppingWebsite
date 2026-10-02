@@ -19,14 +19,13 @@ export function seed(db: Database): void {
 	});
 	insertProducts(seedProducts);
 
-	// 2. 演示用户：demo / 123456
+	// 2. 演示用户：demo / 123456，初始余额 1000
 	const passwordHash = bcrypt.hashSync('123456', 10);
-	db.prepare(`INSERT INTO users (id, username, password, created_at) VALUES (?, ?, ?, ?)`).run(
-		1,
-		'demo',
-		passwordHash,
-		new Date('2026-01-01T00:00:00Z').toISOString(),
-	);
+	db
+		.prepare(
+			`INSERT INTO users (id, username, password, balance, created_at) VALUES (?, ?, ?, ?, ?)`,
+		)
+		.run(1, 'demo', passwordHash, 1000, new Date('2026-01-01T00:00:00Z').toISOString());
 
 	// 3. 演示订单（与前端 mockOrders 一致）
 	const orderNo = 'ORD20260930100001';

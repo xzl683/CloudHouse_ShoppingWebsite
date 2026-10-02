@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { ElMessage } from 'element-plus';
 import type { CartItem, Product } from '@/types';
 import { storage } from '@/utils/storage';
+import { useUserStore } from './user';
+import router from '@/router';
 
 const CART_STORAGE_KEY = 'cart';
 
@@ -26,8 +29,20 @@ export const useCartStore = defineStore('cart', () => {
 		items.value.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
 	);
 
-	// 添加商品到购物车
-	function addToCart(product: Product, quantity = 1): void {
+	// 登录守卫：未登录时提示并跳转登录页，返回 false 表示拦截
+	function requireLogin(): boolean {
+		const userStore = useUserStore();
+		if (!userStore.isLoggedIn) {
+			ElMessage.warning('请先登录后再购买');
+			router.push({ name: 'Login' });
+			return false;
+		}
+		return true;
+	}
+
+	// 添加商品到购物车（未登录则拦截），返回是否成功
+	function addToCart(product: Product, quantity = 1): boolean {
+		if (!requireLogin()) return false;
 		const existing = items.value.find(item => item.product.id === product.id);
 		if (existing) {
 			existing.quantity += quantity;
@@ -35,6 +50,7 @@ export const useCartStore = defineStore('cart', () => {
 			items.value.push({ product, quantity });
 		}
 		saveCartToStorage();
+		return true;
 	}
 
 	// 更新商品数量
@@ -72,6 +88,7 @@ export const useCartStore = defineStore('cart', () => {
 		items,
 		totalCount,
 		totalAmount,
+		requireLogin,
 		addToCart,
 		updateQuantity,
 		removeFromCart,

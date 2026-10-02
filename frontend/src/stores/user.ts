@@ -9,6 +9,7 @@ export const useUserStore = defineStore('user', () => {
 	const token = ref<string | null>(storage.get<string>('token'));
 
 	const isLoggedIn = computed(() => !!token.value);
+	const balance = computed(() => user.value?.balance ?? 0);
 
 	async function login(data: LoginRequest): Promise<void> {
 		const res = await authApi.login(data);
@@ -18,6 +19,11 @@ export const useUserStore = defineStore('user', () => {
 
 	async function register(data: RegisterRequest): Promise<void> {
 		await authApi.register(data);
+	}
+
+	async function recharge(amount: number): Promise<void> {
+		const updated = await authApi.recharge(amount);
+		user.value = updated;
 	}
 
 	function logout(): void {
@@ -30,8 +36,10 @@ export const useUserStore = defineStore('user', () => {
 		user,
 		token,
 		isLoggedIn,
+		balance,
 		login,
 		register,
+		recharge,
 		logout,
 	};
 });

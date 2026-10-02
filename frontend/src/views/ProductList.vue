@@ -5,8 +5,8 @@
 			<div class="product-list__filter-item">
 				<span class="product-list__filter-label">分类：</span>
 				<el-radio-group v-model="selectedCategory" @change="handleFilterChange">
-					<el-radio-button label="">全部</el-radio-button>
-					<el-radio-button v-for="cat in categories" :key="cat" :label="cat">{{
+					<el-radio-button value="">全部</el-radio-button>
+					<el-radio-button v-for="cat in categories" :key="cat" :value="cat">{{
 						cat
 					}}</el-radio-button>
 				</el-radio-group>

@@ -47,8 +47,8 @@ function goDetail() {
 }
 
 function handleAddToCart() {
-	cartStore.addToCart(props.product);
-	ElMessage.success(`已添加「${props.product.name}」到购物车`);
+	const ok = cartStore.addToCart(props.product);
+	if (ok) ElMessage.success(`已添加「${props.product.name}」到购物车`);
 }
 </script>
 

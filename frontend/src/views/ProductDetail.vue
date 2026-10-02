@@ -109,12 +109,13 @@ async function fetchProduct() {
 
 function handleAddToCart() {
 	if (!product.value) return;
-	cartStore.addToCart(product.value, quantity.value);
-	ElMessage.success(`已添加 ${quantity.value} 件「${product.value.name}」到购物车`);
+	const ok = cartStore.addToCart(product.value, quantity.value);
+	if (ok) ElMessage.success(`已添加 ${quantity.value} 件「${product.value.name}」到购物车`);
 }
 
 async function handleBuyNow() {
 	if (!product.value) return;
+	if (!cartStore.requireLogin()) return;
 	try {
 		const order = await createOrder({
 			items: [{ product_id: product.value.id, quantity: quantity.value }],
