@@ -24,6 +24,19 @@ export const useUserStore = defineStore('user', () => {
 	async function recharge(amount: number): Promise<void> {
 		const updated = await authApi.recharge(amount);
 		user.value = updated;
+		storage.set('user', updated);
+	}
+
+	// 刷新当前用户信息（如下单扣费后同步余额）
+	async function refreshUser(): Promise<void> {
+		if (!token.value) return;
+		try {
+			const latest = await authApi.getCurrentUser();
+			user.value = latest;
+			storage.set('user', latest);
+		} catch {
+			// 刷新失败不影响主流程，保留本地缓存
+		}
 	}
 
 	function logout(): void {
@@ -40,6 +53,7 @@ export const useUserStore = defineStore('user', () => {
 		login,
 		register,
 		recharge,
+		refreshUser,
 		logout,
 	};
 });

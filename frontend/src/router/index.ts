@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+import { useUserStore } from '@/stores/user';
 
 const routes: RouteRecordRaw[] = [
 	{
@@ -27,13 +28,13 @@ const routes: RouteRecordRaw[] = [
 				path: 'orders',
 				name: 'OrderList',
 				component: () => import('@/views/OrderList.vue'),
-				meta: { title: '我的订单' },
+				meta: { title: '我的订单', requiresAuth: true },
 			},
 			{
 				path: 'orders/:id',
 				name: 'OrderDetail',
 				component: () => import('@/views/OrderDetail.vue'),
-				meta: { title: '订单详情' },
+				meta: { title: '订单详情', requiresAuth: true },
 			},
 			{
 				path: 'login',
@@ -64,10 +65,18 @@ const router = createRouter({
 	},
 });
 
-// 路由守卫：设置页面标题
+// 路由守卫：登录校验 + 设置页面标题
 router.beforeEach((to, _from, next) => {
 	const title = (to.meta.title as string) || '云屋商城';
 	document.title = `${title} - 云屋商城`;
+
+	if (to.meta.requiresAuth) {
+		const userStore = useUserStore();
+		if (!userStore.isLoggedIn) {
+			next({ name: 'Login', query: { redirect: to.fullPath } });
+			return;
+		}
+	}
 	next();
 });
 

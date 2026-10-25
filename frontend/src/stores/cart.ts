@@ -34,7 +34,10 @@ export const useCartStore = defineStore('cart', () => {
 		const userStore = useUserStore();
 		if (!userStore.isLoggedIn) {
 			ElMessage.warning('请先登录后再购买');
-			router.push({ name: 'Login' });
+			router.push({
+				name: 'Login',
+				query: { redirect: router.currentRoute.value.fullPath },
+			});
 			return false;
 		}
 		return true;

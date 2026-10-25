@@ -1,7 +1,30 @@
 // 商品种子数据（与 frontend/src/mock/products.ts 保持一致）
-// 图片使用 picsum 占位图
+// 商品图片为本地真实产品图，位于 frontend/public/products
 
-const img = (seed: string) => `https://picsum.photos/seed/${seed}/600/600`;
+const IMG_MAP: Record<string, string> = {
+	headphone1: 'headphone-pro',
+	earphone1: 'earphone-sport',
+	earbuds1: 'earbuds-tws',
+	keyboard1: 'keyboard-k8',
+	keyboard2: 'keyboard-retro',
+	keyboard3: 'keyboard-gamer',
+	mouse1: 'mouse-ergo',
+	mouse2: 'mouse-gamer',
+	mouse3: 'mouse-silent',
+	monitor1: 'monitor-4k',
+	monitor2: 'monitor-gaming',
+	monitor3: 'monitor-portable',
+	watch1: 'watch-smart',
+	band1: 'band-fitness',
+	lamp1: 'lamp-desk',
+	powerbank1: 'powerbank-magsafe',
+	hub1: 'hub-dock',
+	webcam1: 'webcam-2k',
+	speaker1: 'speaker-mini',
+	speaker2: 'speaker-studio',
+};
+
+const img = (seed: string) => `/products/${IMG_MAP[seed] ?? seed}.jpg`;
 
 export interface SeedProduct {
 	id: number;

@@ -7,6 +7,7 @@
 		<div class="product-card__info">
 			<h3 class="product-card__name text-ellipsis-2">{{ product.name }}</h3>
 			<div class="product-card__tags">
+				<el-tag size="small" type="primary" effect="plain">{{ product.category }}</el-tag>
 				<el-tag
 					v-for="tag in product.tags.slice(0, 2)"
 					:key="tag"

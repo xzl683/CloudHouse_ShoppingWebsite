@@ -84,11 +84,13 @@ import { ElMessage } from 'element-plus';
 import { ShoppingCart } from '@element-plus/icons-vue';
 import { getProductById, createOrder } from '@/api';
 import { useCartStore } from '@/stores/cart';
+import { useUserStore } from '@/stores/user';
 import type { Product } from '@/types';
 
 const route = useRoute();
 const router = useRouter();
 const cartStore = useCartStore();
+const userStore = useUserStore();
 
 const loading = ref(false);
 const product = ref<Product | null>(null);
@@ -116,14 +118,23 @@ function handleAddToCart() {
 async function handleBuyNow() {
 	if (!product.value) return;
 	if (!cartStore.requireLogin()) return;
+	const total = Math.round(product.value.price * quantity.value * 100) / 100;
+	if (userStore.balance < total) {
+		ElMessage.warning(
+			`余额不足：当前余额 ¥${userStore.balance.toFixed(2)}，需支付 ¥${total.toFixed(2)}`,
+		);
+		return;
+	}
 	try {
 		const order = await createOrder({
 			items: [{ product_id: product.value.id, quantity: quantity.value }],
 		});
+		await userStore.refreshUser();
 		ElMessage.success('下单成功！');
 		router.push({ name: 'OrderDetail', params: { id: order.id } });
-	} catch {
-		ElMessage.error('下单失败，请重试');
+	} catch (e) {
+		const err = e as { response?: unknown; message?: string };
+		if (!err.response && err.message) ElMessage.error(err.message);
 	}
 }
 

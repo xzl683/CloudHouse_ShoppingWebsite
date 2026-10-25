@@ -47,12 +47,13 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { User, Lock } from '@element-plus/icons-vue';
 import { useUserStore } from '@/stores/user';
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 
 const formRef = ref<FormInstance>();
@@ -72,7 +73,8 @@ async function handleLogin() {
 		try {
 			await userStore.login(form.value);
 			ElMessage.success('登录成功');
-			router.push({ name: 'Home' });
+			const redirect = route.query.redirect as string | undefined;
+			router.push(redirect || { name: 'Home' });
 		} catch (e) {
 			ElMessage.error((e as Error).message || '登录失败');
 		} finally {

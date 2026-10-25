@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import { ElMessage } from 'element-plus';
 import type { ApiResponse } from '@/types';
+import { storage } from '@/utils/storage';
 
 // 创建 axios 实例
 const request: AxiosInstance = axios.create({
@@ -14,8 +15,8 @@ const request: AxiosInstance = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
 	config => {
-		// 注入 token
-		const token = localStorage.getItem('cloudhouse_token');
+		// 注入 token（storage 存的是 JSON 字符串，必须用 storage.get 解析）
+		const token = storage.get<string>('token');
 		if (token) {
 			config.headers.Authorization = `Bearer ${token}`;
 		}

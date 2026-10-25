@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getDb } from '../db/database';
 import { success } from '../utils/response';
-import { authOptional } from '../middleware/auth';
+import { authRequired } from '../middleware/auth';
 import { generateOrderNo } from '../utils/orderNo';
 import type { Order, OrderItem, CreateOrderRequest } from '../types';
 
@@ -62,20 +62,12 @@ function loadOrderById(id: number): Order | null {
 	return rowToOrder(orderRow, items);
 }
 
-// GET /api/orders —— 订单列表
-// 登录用户返回其本人订单 + 匿名订单；未登录返回匿名订单
-router.get('/', authOptional, (req, res) => {
+// GET /api/orders —— 当前登录用户的订单列表
+router.get('/', authRequired, (req, res) => {
 	const db = getDb();
-	let rows: OrderRow[];
-	if (req.userId) {
-		rows = db
-			.prepare('SELECT * FROM orders WHERE user_id = ? OR user_id IS NULL ORDER BY created_at DESC')
-			.all(req.userId) as OrderRow[];
-	} else {
-		rows = db
-			.prepare('SELECT * FROM orders WHERE user_id IS NULL ORDER BY created_at DESC')
-			.all() as OrderRow[];
-	}
+	const rows = db
+		.prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC')
+		.all(req.userId) as OrderRow[];
 	const orders = rows.map(r => {
 		const items = db
 			.prepare('SELECT * FROM order_items WHERE order_id = ?')
@@ -85,8 +77,8 @@ router.get('/', authOptional, (req, res) => {
 	res.json(success(orders));
 });
 
-// POST /api/orders —— 创建订单
-router.post('/', authOptional, (req, res) => {
+// POST /api/orders —— 创建订单（从余额扣费）
+router.post('/', authRequired, (req, res) => {
 	const data = req.body as CreateOrderRequest;
 	if (!data?.items || !Array.isArray(data.items) || data.items.length === 0) {
 		res.status(400).json({ code: 400, message: '订单商品不能为空', data: null });
@@ -98,7 +90,7 @@ router.post('/', authOptional, (req, res) => {
 	// 校验商品存在性 & 库存
 	const items: OrderItem[] = [];
 	for (const it of data.items) {
-		if (!it.product_id || !it.quantity || it.quantity < 1) {
+		if (!Number.isInteger(it.quantity) || it.quantity < 1) {
 			res.status(400).json({ code: 400, message: '商品参数不合法', data: null });
 			return;
 		}
@@ -123,10 +115,31 @@ router.post('/', authOptional, (req, res) => {
 		});
 	}
 
-	const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
+	// 汇总金额（保留两位小数，避免浮点误差）
+	const total = Math.round(items.reduce((s, i) => s + i.price * i.quantity, 0) * 100) / 100;
+
+	// 校验余额
+	const user = db.prepare('SELECT id, balance FROM users WHERE id = ?').get(req.userId) as
+		| { id: number; balance: number }
+		| undefined;
+	if (!user) {
+		res.status(401).json({ code: 401, message: '用户不存在，请重新登录', data: null });
+		return;
+	}
+	if (user.balance < total) {
+		res.status(400).json({
+			code: 400,
+			message: `余额不足：当前余额 ¥${user.balance.toFixed(2)}，本单需支付 ¥${total.toFixed(
+				2,
+			)}，请先充值`,
+			data: null,
+		});
+		return;
+	}
+
 	const orderNo = generateOrderNo();
 	const createdAt = new Date().toISOString();
-	const userId = req.userId ?? null;
+	const userId = req.userId as number;
 
 	const insertOrder = db.prepare(
 		`INSERT INTO orders (order_no, user_id, total_amount, status, created_at) VALUES (?, ?, ?, ?, ?)`,
@@ -134,17 +147,53 @@ router.post('/', authOptional, (req, res) => {
 	const insertItem = db.prepare(
 		`INSERT INTO order_items (order_id, product_id, name, price, quantity, image_url) VALUES (?, ?, ?, ?, ?, ?)`,
 	);
-	const reduceStock = db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?');
+	// 仅在余额充足时扣款，防止并发下余额被扣成负数
+	const deductBalance = db.prepare(
+		'UPDATE users SET balance = ROUND(balance - ?, 2) WHERE id = ? AND balance >= ?',
+	);
+	// 仅在库存充足时扣减
+	const reduceStock = db.prepare(
+		'UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?',
+	);
 
-	const tx = db.transaction(() => {
-		const r = insertOrder.run(orderNo, userId, total, 'paid', createdAt);
-		const orderId = Number(r.lastInsertRowid);
-		for (const it of items) {
-			insertItem.run(orderId, it.product_id, it.name, it.price, it.quantity, it.image_url);
-			reduceStock.run(it.quantity, it.product_id);
+	try {
+		const tx = db.transaction(() => {
+			const paid = deductBalance.run(total, userId, total);
+			if (paid.changes === 0) {
+				throw new Error('INSUFFICIENT_BALANCE');
+			}
+			const r = insertOrder.run(orderNo, userId, total, 'paid', createdAt);
+			const orderId = Number(r.lastInsertRowid);
+			for (const it of items) {
+				const stockRes = reduceStock.run(it.quantity, it.product_id, it.quantity);
+				if (stockRes.changes === 0) {
+					throw new Error(`OUT_OF_STOCK:${it.name}`);
+				}
+				insertItem.run(
+					orderId,
+					it.product_id,
+					it.name,
+					it.price,
+					it.quantity,
+					it.image_url,
+				);
+			}
+		});
+		tx();
+	} catch (e) {
+		const msg = e instanceof Error ? e.message : '';
+		if (msg === 'INSUFFICIENT_BALANCE') {
+			res.status(400).json({ code: 400, message: '余额不足，请先充值', data: null });
+			return;
 		}
-	});
-	tx();
+		if (msg.startsWith('OUT_OF_STOCK:')) {
+			res
+				.status(400)
+				.json({ code: 400, message: `商品「${msg.slice(12)}」库存不足`, data: null });
+			return;
+		}
+		throw e;
+	}
 
 	// 查询并返回完整订单
 	const created = db.prepare('SELECT id FROM orders WHERE order_no = ?').get(orderNo) as {
@@ -153,14 +202,18 @@ router.post('/', authOptional, (req, res) => {
 	res.json(success(loadOrderById(created.id)));
 });
 
-// GET /api/orders/no/:orderNo —— 按订单号查询
+// GET /api/orders/no/:orderNo —— 按订单号查询（仅本人）
 // 必须注册在 /:id 之前
-router.get('/no/:orderNo', (req, res) => {
+router.get('/no/:orderNo', authRequired, (req, res) => {
 	const db = getDb();
 	const orderRow = db.prepare('SELECT * FROM orders WHERE order_no = ?').get(req.params.orderNo) as
 		OrderRow | undefined;
 	if (!orderRow) {
 		res.status(404).json({ code: 404, message: '订单不存在', data: null });
+		return;
+	}
+	if (orderRow.user_id !== req.userId) {
+		res.status(403).json({ code: 403, message: '无权查看该订单', data: null });
 		return;
 	}
 	const items = db
@@ -169,8 +222,8 @@ router.get('/no/:orderNo', (req, res) => {
 	res.json(success(rowToOrder(orderRow, items)));
 });
 
-// GET /api/orders/:id —— 按订单 id 查询
-router.get('/:id', (req, res) => {
+// GET /api/orders/:id —— 按订单 id 查询（仅本人）
+router.get('/:id', authRequired, (req, res) => {
 	const id = Number(req.params.id);
 	if (Number.isNaN(id)) {
 		res.status(400).json({ code: 400, message: '订单 id 不合法', data: null });
@@ -179,6 +232,13 @@ router.get('/:id', (req, res) => {
 	const order = loadOrderById(id);
 	if (!order) {
 		res.status(404).json({ code: 404, message: '订单不存在', data: null });
+		return;
+	}
+	const row = getDb().prepare('SELECT user_id FROM orders WHERE id = ?').get(id) as {
+		user_id: number | null;
+	};
+	if (row.user_id !== req.userId) {
+		res.status(403).json({ code: 403, message: '无权查看该订单', data: null });
 		return;
 	}
 	res.json(success(order));

@@ -1,11 +1,13 @@
 import { http } from '@/utils/request';
 import { mockProducts, mockOrders } from '@/mock/products';
+import { syncMockUserBalance } from '@/api/auth';
 import type {
 	Product,
 	ProductQueryParams,
 	ProductListResponse,
 	Order,
 	CreateOrderRequest,
+	User,
 } from '@/types';
 import { generateOrderNo } from '@/utils/format';
 import { storage } from '@/utils/storage';
@@ -102,21 +104,47 @@ function saveLocalOrders(orders: Order[]): void {
 
 export function createOrder(data: CreateOrderRequest): Promise<Order> {
 	if (USE_MOCK) {
-		const items = data.items
-			.map(item => {
-				const product = mockProducts.find(p => p.id === item.product_id);
-				if (!product) return null;
-				return {
-					product_id: product.id,
-					name: product.name,
-					price: product.price,
-					quantity: item.quantity,
-					image_url: product.image_url,
-				};
-			})
-			.filter(Boolean) as Order['items'];
+		const user = storage.get<User>('user');
+		if (!user) return Promise.reject(new Error('请先登录后再下单'));
 
-		const totalAmount = items.reduce((sum, it) => sum + it.price * it.quantity, 0);
+		const items: Order['items'] = [];
+		for (const item of data.items) {
+			const product = mockProducts.find(p => p.id === item.product_id);
+			if (!product) return Promise.reject(new Error('商品不存在'));
+			if (product.stock < item.quantity) {
+				return Promise.reject(new Error(`商品「${product.name}」库存不足`));
+			}
+			items.push({
+				product_id: product.id,
+				name: product.name,
+				price: product.price,
+				quantity: item.quantity,
+				image_url: product.image_url,
+			});
+		}
+
+		const totalAmount =
+			Math.round(items.reduce((sum, it) => sum + it.price * it.quantity, 0) * 100) / 100;
+
+		// 余额校验与扣费
+		if (user.balance < totalAmount) {
+			return Promise.reject(
+				new Error(
+					`余额不足：当前余额 ¥${user.balance.toFixed(2)}，本单需支付 ¥${totalAmount.toFixed(
+						2,
+					)}，请先充值`,
+				),
+			);
+		}
+		user.balance = Math.round((user.balance - totalAmount) * 100) / 100;
+		storage.set('user', user);
+		syncMockUserBalance(user.username, user.balance);
+
+		// 扣减库存
+		for (const item of data.items) {
+			const product = mockProducts.find(p => p.id === item.product_id);
+			if (product) product.stock -= item.quantity;
+		}
 
 		const order: Order = {
 			id: Date.now(),

@@ -42,6 +42,7 @@ declare module 'vue' {
     FooterBar: typeof import('./components/FooterBar.vue')['default']
     NavBar: typeof import('./components/NavBar.vue')['default']
     ProductCard: typeof import('./components/ProductCard.vue')['default']
+    RechargeDialog: typeof import('./components/RechargeDialog.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }
