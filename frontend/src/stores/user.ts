@@ -15,6 +15,9 @@ export const useUserStore = defineStore('user', () => {
 		const res = await authApi.login(data);
 		user.value = res.user;
 		token.value = res.token;
+		// 真实后端登录时也需要持久化，否则刷新页面会丢失登录态
+		storage.set('token', res.token);
+		storage.set('user', res.user);
 	}
 
 	async function register(data: RegisterRequest): Promise<void> {
