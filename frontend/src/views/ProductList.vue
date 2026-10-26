@@ -47,8 +47,7 @@
 
 		<!-- 搜索结果提示 -->
 		<div v-if="keyword" class="product-list__result">
-			搜索 “<b>{{ keyword }}</b
-			>” 共找到 <b>{{ total }}</b> 件商品
+			搜索 “<b>{{ keyword }}</b>” 共找到 <b>{{ total }}</b> 件商品
 		</div>
 
 		<!-- 商品列表 -->
