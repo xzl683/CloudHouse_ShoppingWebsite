@@ -62,6 +62,8 @@ npm start         # node dist/server.js
 - 服务地址：http://localhost:3001
 - 健康检查：http://localhost:3001/api/health
 
+> **Node 版本要求：20.x ～ 26.x。** 本项目使用 `better-sqlite3` 12.x，兼容 Node 24/25/26。若在 Node 24.19 + 旧版 11.x 下首次查询数据库时出现 `Assertion failed: (env) != nullptr`（`RemoveEnvironmentCleanupHook`），说明原生模块与当前 Node 头文件不匹配：删除 `node_modules` 后重新 `npm install`，或切换 Node 版本后执行 `npm rebuild better-sqlite3`。
+
 ## 配置
 
 复制 `.env.example` 为 `.env` 并按需修改：
