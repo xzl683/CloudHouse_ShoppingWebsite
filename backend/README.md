@@ -9,8 +9,8 @@
 | 层级     | 技术                    | 说明                     |
 | -------- | ----------------------- | ------------------------ |
 | 运行时   | Node.js + TypeScript    | 与前端统一 TS 生态       |
-| Web 框架 | Express 4               | 轻量成熟                 |
-| 数据库   | SQLite (better-sqlite3) | 单文件、零配置、同步 API |
+| Web 框架 | Express 5               | 轻量、原生 ESM 友好      |
+| 数据库   | SQLite (better-sqlite3) | 单文件、零配置、同步 API、WAL + 外键 |
 | 鉴权     | jsonwebtoken + bcryptjs | JWT 令牌 + 密码哈希      |
 | 日志     | morgan                  | HTTP 请求日志            |
 | 开发工具 | tsx                     | TS 热重载开发            |
@@ -96,12 +96,12 @@ npm start         # node dist/server.js
 
 ### 订单 `/api/orders`
 
-| 方法 | 路径                      | 说明                                      | 鉴权 |
-| ---- | ------------------------- | ----------------------------------------- | ---- |
-| GET  | `/api/orders`             | 订单列表（登录看本人+匿名，未登录看匿名） | 可选 |
-| POST | `/api/orders`             | 创建订单（校验库存 + 事务扣减）           | 可选 |
-| GET  | `/api/orders/:id`         | 按 id 查询                                | -    |
-| GET  | `/api/orders/no/:orderNo` | 按订单号查询                              | -    |
+| 方法 | 路径                      | 说明                                                | 鉴权     |
+| ---- | ------------------------- | --------------------------------------------------- | -------- |
+| GET  | `/api/orders`             | 当前登录用户的订单列表                              | 必须登录 |
+| POST | `/api/orders`             | 创建订单（校验库存 + 余额，事务内扣余额/库存/写单） | 必须登录 |
+| GET  | `/api/orders/:id`         | 按 id 查询（仅本人）                                | 必须登录 |
+| GET  | `/api/orders/no/:orderNo` | 按订单号查询（仅本人）                              | 必须登录 |
 
 创建订单请求体：
 
@@ -109,13 +109,39 @@ npm start         # node dist/server.js
 { "items": [{ "product_id": 2, "quantity": 2 }] }
 ```
 
+创建订单响应：
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 42,
+    "order_no": "ORD20261026231234",
+    "total_amount": 1098.00,
+    "status": "paid",
+    "created_at": "2026-10-26T23:12:34Z",
+    "items": [
+      { "product_id": 2, "name": "...", "price": 199, "quantity": 2, "image_url": "..." }
+    ]
+  }
+}
+```
+
+余额不足时返回 400：
+
+```json
+{ "code": 400, "message": "余额不足：当前余额 ¥100.00，本单需支付 ¥1098.00，请先充值" }
+```
+
 ### 用户认证 `/api/auth`
 
-| 方法 | 路径                 | 说明                               | 鉴权     |
-| ---- | -------------------- | ---------------------------------- | -------- |
-| POST | `/api/auth/register` | 注册（用户名 2-20 位，密码 ≥6 位） | -        |
-| POST | `/api/auth/login`    | 登录，返回 JWT                     | -        |
-| GET  | `/api/auth/me`       | 当前用户信息                       | 必须登录 |
+| 方法 | 路径                 | 说明                                       | 鉴权     |
+| ---- | -------------------- | ------------------------------------------ | -------- |
+| POST | `/api/auth/register` | 注册（用户名 2-20 位，密码 ≥6 位，初始余额 0） | -        |
+| POST | `/api/auth/login`    | 登录，返回 JWT + 当前用户（含余额）        | -        |
+| GET  | `/api/auth/me`       | 当前用户信息（id、username、balance、created_at） | 必须登录 |
+| POST | `/api/auth/recharge` | 充值，请求体 `{ "amount": 100 }`，单次 1~100000 | 必须登录 |
 
 ### 其他
 
@@ -125,15 +151,18 @@ npm start         # node dist/server.js
 
 ## 数据模型
 
-- `users`：id, username(唯一), password(bcrypt 哈希), created_at
-- `products`：id, name, price, description, category, image_url, stock, tags(JSON), created_at
-- `orders`：id, order_no(唯一), user_id(可空), total_amount, status, created_at
-- `order_items`：id, order_id, product_id, name, price, quantity, image_url
+- `users`：id, username(唯一), password(bcrypt 哈希), balance(REAL, 默认 0), created_at
+- `products`：id, name, price, description, category, image_url, stock, tags(JSON 字符串), created_at
+- `orders`：id, order_no(唯一), user_id, total_amount, status('paid'), created_at
+- `order_items`：id, order_id(FK→orders.id), product_id(FK→products.id), name, price, quantity, image_url
+
+> 启动时执行 `PRAGMA foreign_keys = ON`，删除不存在的 order_id 或 product_id 会被拒绝。
 
 ## 演示账号
 
 - 用户名：`demo`
 - 密码：`123456`
+- 初始余额：`¥1000.00`
 
 ## 与前端联调
 
@@ -146,6 +175,8 @@ npm start         # node dist/server.js
 ## 设计说明
 
 - **统一响应结构**：与前端 `ApiResponse<T>` 契约一致，前端响应拦截器据此判断成功/失败。
-- **JWT 鉴权**：`authRequired`（必须登录）/ `authOptional`（软鉴权，有 token 则注入用户上下文）。订单流程采用软鉴权，允许游客下单，登录用户的订单归属其账户。
-- **事务**：创建订单时在单个事务内插入订单、订单项并扣减库存，保证一致性。
+- **JWT 鉴权**：`authRequired`（必须登录，解析失败直接 401）/ `authOptional`（软鉴权，有 token 则注入用户上下文）。订单流程采用 `authRequired`，所有订单必须归属已登录用户，订单查询接口额外校验 `user_id === req.userId`。
+- **事务下单**：创建订单时在单个事务内依次完成「扣款（`WHERE balance >= ?` 保证不为负）、写 orders 主表、逐条扣库存（`WHERE stock >= ?`）、写 order_items」，任何一步失败整体回滚。
+- **余额字段**：`users.balance` 为 REAL，金额计算统一保留两位小数；数据库层用 `ROUND`，路由层用 `Math.round(x * 100) / 100` 避免浮点误差。
 - **类型共享**：`src/types/index.ts` 与 `frontend/src/types/index.ts` 保持一致契约。
+- **外键保护**：SQLite 连接打开后立即 `PRAGMA foreign_keys = ON`，`order_items` 引用 `orders` 和 `products`，孤儿记录不会被插入。

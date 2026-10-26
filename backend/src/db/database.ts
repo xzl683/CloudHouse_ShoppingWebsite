@@ -20,6 +20,8 @@ export function getDb(): Database.Database {
 
 	const db = new Database(dbPath);
 	db.pragma('journal_mode = WAL');
+	// SQLite 默认不执行外键约束，显式开启保证 order_items.order_id / product_id 引用完整性
+	db.pragma('foreign_keys = ON');
 
 	initSchema(db);
 
